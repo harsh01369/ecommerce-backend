@@ -109,6 +109,7 @@ app.use(
         resave: false,
         saveUninitialized: false,
         store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
+        dbName: 'uwear',
         cookie: {
             secure: process.env.NODE_ENV === 'production',
             httpOnly: true,
