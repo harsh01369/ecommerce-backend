@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
@@ -85,11 +85,20 @@ const port = process.env.PORT || 5000;
 
 // Middleware setup
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004','https://www.uwearuk.com', 'https://admin.uwearuk.com', 'https://admin-dashboard-h9cx.onrender.com'],
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004', 'https://www.uwearuk.com', 'https://admin.uwearuk.com', 'https://admin-dashboard-h9cx.onrender.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
+
+// Explicitly handle CORS preflight requests
+app.options('*', cors({
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004', 'https://www.uwearuk.com', 'https://admin.uwearuk.com', 'https://admin-dashboard-h9cx.onrender.com'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+}));
+
 app.use(cookieParser());
 
 // Webhook route (raw body for Stripe)
@@ -108,12 +117,11 @@ app.use(
         secret: process.env.SESSION_SECRET,
         resave: false,
         saveUninitialized: false,
-        store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
-        dbName: 'uwear',
+        store: MongoStore.create({ mongoUrl: process.env.MONGO_URI, dbName: 'uwear' }),
         cookie: {
-            secure: process.env.NODE_ENV === 'production',
+            secure: process.env.NODE_ENV === 'production' ? true : false, // Must be true in production for HTTPS
             httpOnly: true,
-            sameSite: 'lax',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Cross-site cookies in production
             maxAge: 24 * 60 * 60 * 1000, // 1 day
         },
     })
@@ -145,7 +153,12 @@ app.post('/api/admin/login', async (req, res) => {
                 winstonLogger.error('Session save error:', err);
                 return res.status(500).json({ message: 'Session error' });
             }
-            res.cookie('connect.sid', req.session.id, { httpOnly: true, sameSite: 'lax', secure: false });
+            res.cookie('connect.sid', req.session.id, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production' ? true : false,
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+                maxAge: 24 * 60 * 60 * 1000,
+            });
             winstonLogger.info('Admin session created:', { sessionId: req.session.id, connectSid: req.session.id });
             return res.status(200).json({ message: 'Admin logged in', isAdmin: true });
         });
@@ -163,7 +176,11 @@ app.post('/api/admin/logout', (req, res) => {
             winstonLogger.error('Session destroy error:', err);
             return res.status(500).json({ message: 'Logout failed' });
         }
-        res.clearCookie('connect.sid');
+        res.clearCookie('connect.sid', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production' ? true : false,
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        });
         winstonLogger.info('Admin logged out');
         res.status(200).json({ message: 'Admin logged out' });
     });
