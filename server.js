@@ -83,29 +83,21 @@ if (!process.env.SENDGRID_API_KEY.startsWith('SG.')) {
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Enhanced CORS configuration
-const corsOptions = {
-    origin: [
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://localhost:3002',
-        'http://localhost:3005',
-        'http://localhost:3006',
-        'http://localhost:3004',
-        'https://www.uwearuk.com',
-        'https://admin.uwearuk.com',
-        'https://admin-dashboard-h9cx.onrender.com',
-    ],
+// Middleware setup
+app.use(cors({
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004', 'https://www.uwearuk.com', 'https://admin.uwearuk.com', 'https://admin-dashboard-h9cx.onrender.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-};
+}));
 
-app.use(cors(corsOptions));
-
-// Explicit preflight handler
-app.options('*', cors(corsOptions));
+// Explicitly handle CORS preflight requests
+app.options('*', cors({
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004', 'https://www.uwearuk.com', 'https://admin.uwearuk.com', 'https://admin-dashboard-h9cx.onrender.com'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+}));
 
 app.use(cookieParser());
 
@@ -150,70 +142,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Admin login endpoint
-app.post('/api/admin/login', async (req, res) => {
-    const { username, password } = req.body;
-    winstonLogger.info('Admin login attempt:', { username });
-    if (username === process.env.REACT_APP_ADMIN_USERNAME && password === process.env.REACT_APP_ADMIN_PASSWORD) {
-        req.session.isAdmin = true;
-        req.session.save((err) => {
-            if (err) {
-                winstonLogger.error('Session save error:', err);
-                return res.status(500).json({ message: 'Session error' });
-            }
-            res.cookie('connect.sid', req.session.id, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production' ? true : false,
-                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-                maxAge: 24 * 60 * 60 * 1000,
-            });
-            winstonLogger.info('Admin session created:', { sessionId: req.session.id, connectSid: req.session.id });
-            return res.status(200).json({ message: 'Admin logged in', isAdmin: true });
-        });
-    } else {
-        winstonLogger.warn('Admin login failed: Invalid credentials');
-        return res.status(401).json({ message: 'Invalid admin credentials' });
-    }
-});
-
-// Admin logout endpoint
-app.post('/api/admin/logout', (req, res) => {
-    winstonLogger.info('Admin logout attempt:', { sessionId: req.session.id });
-    req.session.destroy((err) => {
-        if (err) {
-            winstonLogger.error('Session destroy error:', err);
-            return res.status(500).json({ message: 'Logout failed' });
-        }
-        res.clearCookie('connect.sid', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production' ? true : false,
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        });
-        winstonLogger.info('Admin logged out');
-        res.status(200).json({ message: 'Admin logged out' });
-    });
-});
-
-// Admin auth check endpoint
-app.get('/api/admin/checkAuth', (req, res) => {
-    winstonLogger.info('Admin auth check:', { sessionId: req.session.id, isAdmin: req.session.isAdmin });
-    if (req.session.isAdmin) {
-        return res.json({ isAdmin: true });
-    }
-    winstonLogger.warn('Admin auth check: Not authenticated');
-    res.status(401).json({ message: 'Not authenticated' });
-});
-
-// Root route
-app.get('/', (req, res) => {
-    res.status(200).json({ message: 'Server is running' });
-});
-
-// Favicon route
-app.get('/favicon.ico', (req, res) => {
-    res.status(204).end();
-});
-
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
@@ -222,10 +150,7 @@ app.use('/api/orders', (req, res, next) => {
     winstonLogger.info('Order route hit', { method: req.method, url: req.originalUrl, body: req.body });
     orderRoutes(req, res, next);
 });
-app.use('/api/admin', (req, res, next) => {
-    winstonLogger.info('Admin route hit', { method: req.method, url: req.originalUrl, sessionId: req.session.id });
-    adminRoutes(req, res, next);
-});
+app.use('/api/admin', adminRoutes);
 
 // Error handling middleware
 app.use(notFound);
