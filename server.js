@@ -142,6 +142,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// Root route
+app.get('/', (req, res) => {
+    res.status(200).json({ message: 'Server is running' });
+});
+
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
@@ -169,7 +174,7 @@ app.use((err, req, res, next) => {
     });
 
     res.status(statusCode).json({
-        message,
+        message: statusCode === 404 ? 'Resource not found' : message,
         stack: process.env.NODE_ENV === 'production' ? null : err.stack,
     });
 });
