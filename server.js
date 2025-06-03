@@ -88,7 +88,7 @@ app.use(cors({
     origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004', 'https://www.uwearuk.com', 'https://admin.uwearuk.com', 'https://admin-dashboard-h9cx.onrender.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'], // Allow Cookie header
 }));
 
 // Explicitly handle CORS preflight requests
@@ -96,7 +96,7 @@ app.options('*', cors({
     origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004', 'https://www.uwearuk.com', 'https://admin.uwearuk.com', 'https://admin-dashboard-h9cx.onrender.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
 }));
 
 app.use(cookieParser());
@@ -111,15 +111,24 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files for uploaded images
 app.use('/Uploads', express.static(path.join(__dirname, 'Uploads')));
 
-// Session configuration
+// Session configuration with debugging
+app.use((req, res, next) => {
+    console.log('Incoming request cookies:', req.cookies);
+    next();
+});
 app.use(
     session({
         secret: process.env.SESSION_SECRET,
         resave: false,
         saveUninitialized: false,
-        store: MongoStore.create({ mongoUrl: process.env.MONGO_URI, dbName: 'uwear' }),
+        store: MongoStore.create({
+            mongoUrl: process.env.MONGO_URI,
+            dbName: 'uwear',
+            autoRemove: 'native',
+            ttl: 24 * 60 * 60, // 24 hours
+        }),
         cookie: {
-            secure: process.env.NODE_ENV === 'production' ? true : false,
+            secure: process.env.NODE_ENV === 'production',
             httpOnly: true,
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 24 * 60 * 60 * 1000,
@@ -147,11 +156,12 @@ app.get('/', (req, res) => {
     res.status(200).json({ message: 'Server is running' });
 });
 
-// Routes
+// Routes with debug logging
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', (req, res, next) => {
+    console.log('Order route hit with URL:', req.originalUrl); // Debug URL
     winstonLogger.info('Order route hit', { method: req.method, url: req.originalUrl, body: req.body });
     orderRoutes(req, res, next);
 });
