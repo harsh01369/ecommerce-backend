@@ -57,6 +57,7 @@ router.post('/logout', (req, res) => {
 });
 
 router.get('/checkAuth', (req, res) => {
+    console.log('CheckAuth session:', { isAdmin: req.session?.isAdmin, sessionId: req.session?.id, cookies: req.cookies });
     if (req.session && req.session.isAdmin) {
         console.log('Admin auth check: Authenticated', { sessionId: req.session.id });
         return res.json({ isAdmin: true });
