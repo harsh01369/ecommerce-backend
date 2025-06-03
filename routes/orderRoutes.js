@@ -27,7 +27,12 @@ router.delete('/:id', protect, cancelOrder);
 
 // Admin routes
 router.get('/', protectAdminSession, getAllOrders);
-router.put('/move-to-sales', protectAdminSession, moveOrdersToSales); // Moved before /:id
+router.get('/isPaid=true', protectAdminSession, (req, res) => {
+    // Placeholder to handle the query parameter correctly
+    // Replace with actual logic from getAllOrders or a new controller
+    getAllOrders(req, res); // Reuse getAllOrders logic for now
+});
+router.put('/move-to-sales', protectAdminSession, moveOrdersToSales);
 router.put('/:id', protectAdminSession, updateOrder);
 router.delete('/:id', protectAdminSession, deleteOrder);
 router.get('/:id', protect, getOrderById);

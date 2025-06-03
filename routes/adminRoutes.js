@@ -18,6 +18,7 @@ router.get('/low-stock', protectAdminSession, getLowStockProducts);
 // Admin Authentication Routes
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
+    console.log('Login attempt:', { username, sessionId: req.session?.id, cookies: req.cookies }); // Debug
     if (username === process.env.REACT_APP_ADMIN_USERNAME && password === process.env.REACT_APP_ADMIN_PASSWORD) {
         req.session.isAdmin = true;
         req.session.save((err) => {
@@ -27,11 +28,11 @@ router.post('/login', (req, res) => {
             }
             res.cookie('connect.sid', req.session.id, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production' ? true : false,
+                secure: process.env.NODE_ENV === 'production',
                 sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
                 maxAge: 24 * 60 * 60 * 1000,
             });
-            console.log('Admin session created:', { sessionId: req.session.id });
+            console.log('Admin session created:', { sessionId: req.session.id, isAdmin: req.session.isAdmin });
             return res.status(200).json({ message: 'Admin logged in', isAdmin: true });
         });
     } else {
@@ -48,7 +49,7 @@ router.post('/logout', (req, res) => {
         }
         res.clearCookie('connect.sid', {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production' ? true : false,
+            secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         });
         console.log('Admin logged out');
@@ -57,12 +58,12 @@ router.post('/logout', (req, res) => {
 });
 
 router.get('/checkAuth', (req, res) => {
-    console.log('CheckAuth session:', { isAdmin: req.session?.isAdmin, sessionId: req.session?.id, cookies: req.cookies });
+    console.log('CheckAuth session:', { isAdmin: req.session?.isAdmin, sessionId: req.session?.id, cookies: req.cookies }); // Debug
     if (req.session && req.session.isAdmin) {
         console.log('Admin auth check: Authenticated', { sessionId: req.session.id });
         return res.json({ isAdmin: true });
     }
-    console.warn('Admin auth check: Not authenticated');
+    console.warn('Admin auth check: Not authenticated', { sessionId: req.session?.id });
     res.status(401).json({ message: 'Not authenticated' });
 });
 
