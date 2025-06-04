@@ -89,7 +89,7 @@ app.use(cors({
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
-    exposedHeaders: ['Set-Cookie'], // Ensure Set-Cookie is exposed
+    exposedHeaders: ['Set-Cookie', 'Content-Length'], // Ensure Set-Cookie is exposed
 }));
 
 // Explicitly handle CORS preflight requests
@@ -98,7 +98,7 @@ app.options('*', cors({
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
-    exposedHeaders: ['Set-Cookie'],
+    exposedHeaders: ['Set-Cookie', 'Content-Length'],
 }));
 
 app.use(cookieParser());
@@ -130,9 +130,9 @@ app.use(
             ttl: 24 * 60 * 60, // 24 hours
         }),
         cookie: {
-            secure: process.env.NODE_ENV === 'production',
+            secure: process.env.NODE_ENV === 'production', // true on Render (HTTPS)
             httpOnly: true,
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-origin on production
             maxAge: 24 * 60 * 60 * 1000,
         },
     })
@@ -183,6 +183,7 @@ app.use((err, req, res, next) => {
         ip: req.ip,
         body: req.body,
         sessionId: req.session?.id,
+        cookies: req.cookies,
     });
 
     res.status(statusCode).json({
