@@ -88,7 +88,13 @@ app.set('trust proxy', 1);
 
 // Middleware setup
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004', 'https://www.uwearuk.com', 'https://admin.uwearuk.com', 'https://admin-dashboard-h9cx.onrender.com'],
+    origin: [
+        'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002',
+        'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004',
+        'https://www.uwearuk.com', 'https://admin.uwearuk.com',
+        'https://admin-dashboard-h9cx.onrender.com',
+        'https://uwear-frontend.onrender.com'
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
@@ -101,7 +107,9 @@ app.use((req, res, next) => {
     const allowedOrigins = [
         'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002',
         'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004',
-        'https://www.uwearuk.com', 'https://admin.uwearuk.com', 'https://admin-dashboard-h9cx.onrender.com'
+        'https://www.uwearuk.com', 'https://admin.uwearuk.com',
+        'https://admin-dashboard-h9cx.onrender.com',
+        'https://uwear-frontend.onrender.com'
     ];
     if (allowedOrigins.includes(origin)) {
         res.header('Access-Control-Allow-Origin', origin);
@@ -121,7 +129,13 @@ app.use((req, res, next) => {
 
 // Explicitly handle CORS preflight requests
 app.options('*', cors({
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004', 'https://www.uwearuk.com', 'https://admin.uwearuk.com', 'https://admin-dashboard-h9cx.onrender.com'],
+    origin: [
+        'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002',
+        'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004',
+        'https://www.uwearuk.com', 'https://admin.uwearuk.com',
+        'https://admin-dashboard-h9cx.onrender.com',
+        'https://uwear-frontend.onrender.com'
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
