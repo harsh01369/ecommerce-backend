@@ -95,6 +95,20 @@ app.use(cors({
     exposedHeaders: ['Set-Cookie', 'Content-Length'],
 }));
 
+// Debug CORS headers
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004', 'https://www.uwearuk.com', 'https://admin.uwearuk.com', 'https://admin-dashboard-h9cx.onrender.com'].includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin);
+        res.header('Access-Control-Allow-Credentials', 'true');
+        res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Cookie');
+        res.header('Access-Control-Expose-Headers', 'Set-Cookie,Content-Length');
+        console.log('CORS headers set for origin:', origin);
+    }
+    next();
+});
+
 // Explicitly handle CORS preflight requests
 app.options('*', cors({
     origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004', 'https://www.uwearuk.com', 'https://admin.uwearuk.com', 'https://admin-dashboard-h9cx.onrender.com'],
