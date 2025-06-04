@@ -164,7 +164,6 @@ app.use(
             httpOnly: true,
             sameSite: 'none', // Required for cross-origin requests in production
             maxAge: 24 * 60 * 60 * 1000,
-            domain: '.onrender.com', // Match Render's domain
         },
         name: 'connect.sid',
     })

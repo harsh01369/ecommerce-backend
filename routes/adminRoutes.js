@@ -27,6 +27,9 @@ router.post('/login', (req, res) => {
                 return res.status(500).json({ message: 'Session error' });
             }
             console.log('Admin session created:', { sessionId: req.session.id, isAdmin: req.session.isAdmin });
+            // Log the Set-Cookie header if present
+            const setCookie = res.getHeader('Set-Cookie');
+            console.log('Set-Cookie header after login:', setCookie);
             return res.status(200).json({ message: 'Admin logged in', isAdmin: true });
         });
     } else {
@@ -43,9 +46,9 @@ router.post('/logout', (req, res) => {
         }
         res.clearCookie('connect.sid', {
             httpOnly: true,
-            secure: true, // Align with production settings
-            sameSite: 'none', // Align with production settings
-            domain: '.onrender.com', // Match Render's domain
+            secure: true,
+            sameSite: 'none',
+            domain: '.onrender.com',
         });
         console.log('Admin logged out');
         res.status(200).json({ message: 'Admin logged out' });
@@ -53,7 +56,7 @@ router.post('/logout', (req, res) => {
 });
 
 router.get('/checkAuth', (req, res) => {
-    console.log('CheckAuth session:', { isAdmin: req.session?.isAdmin, sessionId: req.session?.id, cookies: req.cookies }); // Debug
+    console.log('CheckAuth session:', { isAdmin: req.session?.isAdmin, sessionId: req.session?.id, cookies: req.cookies });
     if (req.session && req.session.isAdmin) {
         console.log('Admin auth check: Authenticated', { sessionId: req.session.id });
         return res.json({ isAdmin: true });
