@@ -26,12 +26,6 @@ router.post('/login', (req, res) => {
                 console.error('Session save error:', err);
                 return res.status(500).json({ message: 'Session error' });
             }
-            res.cookie('connect.sid', req.session.id, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-                maxAge: 24 * 60 * 60 * 1000,
-            });
             console.log('Admin session created:', { sessionId: req.session.id, isAdmin: req.session.isAdmin });
             return res.status(200).json({ message: 'Admin logged in', isAdmin: true });
         });
@@ -49,8 +43,9 @@ router.post('/logout', (req, res) => {
         }
         res.clearCookie('connect.sid', {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            secure: true, // Align with production settings
+            sameSite: 'none', // Align with production settings
+            domain: '.onrender.com', // Match Render's domain
         });
         console.log('Admin logged out');
         res.status(200).json({ message: 'Admin logged out' });

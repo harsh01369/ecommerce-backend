@@ -133,15 +133,16 @@ app.use(
             dbName: 'uwear',
             autoRemove: 'native',
             ttl: 24 * 60 * 60, // 24 hours
+            stringify: false, // Ensure session data is stored as plain object
         }),
         cookie: {
-            secure: process.env.NODE_ENV === 'production',
+            secure: true, // Force secure for HTTPS (Render)
             httpOnly: true,
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            sameSite: 'none', // Required for cross-origin requests in production
             maxAge: 24 * 60 * 60 * 1000,
-            domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined, // For Render subdomains
+            domain: '.onrender.com', // Match Render's domain
         },
-        name: 'connect.sid', // Explicitly set cookie name
+        name: 'connect.sid',
     })
 );
 
