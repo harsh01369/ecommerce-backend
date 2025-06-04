@@ -95,16 +95,26 @@ app.use(cors({
     exposedHeaders: ['Set-Cookie', 'Content-Length'],
 }));
 
-// Debug CORS headers
+// Debug CORS and Set-Cookie headers
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-    if (['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004', 'https://www.uwearuk.com', 'https://admin.uwearuk.com', 'https://admin-dashboard-h9cx.onrender.com'].includes(origin)) {
+    const allowedOrigins = [
+        'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002',
+        'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004',
+        'https://www.uwearuk.com', 'https://admin.uwearuk.com', 'https://admin-dashboard-h9cx.onrender.com'
+    ];
+    if (allowedOrigins.includes(origin)) {
         res.header('Access-Control-Allow-Origin', origin);
         res.header('Access-Control-Allow-Credentials', 'true');
         res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
         res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Cookie');
         res.header('Access-Control-Expose-Headers', 'Set-Cookie,Content-Length');
         console.log('CORS headers set for origin:', origin);
+    }
+    // Log Set-Cookie header if present
+    const setCookie = res.getHeader('Set-Cookie');
+    if (setCookie) {
+        console.log('Set-Cookie header:', setCookie);
     }
     next();
 });
