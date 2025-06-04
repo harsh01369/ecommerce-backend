@@ -57,6 +57,13 @@ const protectAdmin = asyncHandler(async (req, res, next) => {
 });
 
 const protectAdminSession = asyncHandler(async (req, res, next) => {
+    console.log('Checking admin session:', {
+        sessionId: req.sessionID,
+        sessionData: req.session,
+        isAdmin: req.session?.isAdmin,
+        method: req.method,
+        url: req.url,
+    });
     if (req.session && req.session.isAdmin) {
         console.log('Admin session verified', {
             sessionId: req.session.id,
@@ -68,7 +75,6 @@ const protectAdminSession = asyncHandler(async (req, res, next) => {
         console.error('Admin session access denied', {
             sessionId: req.session?.id || 'none',
             method: req.method,
-
             url: req.url,
         });
         res.status(403);

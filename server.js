@@ -83,13 +83,16 @@ if (!process.env.SENDGRID_API_KEY.startsWith('SG.')) {
 const app = express();
 const port = process.env.PORT || 5000;
 
+// Trust Render's proxy for secure cookies
+app.set('trust proxy', 1);
+
 // Middleware setup
 app.use(cors({
     origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3005', 'http://localhost:3006', 'http://localhost:3004', 'https://www.uwearuk.com', 'https://admin.uwearuk.com', 'https://admin-dashboard-h9cx.onrender.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
-    exposedHeaders: ['Set-Cookie', 'Content-Length'], // Ensure Set-Cookie is exposed
+    exposedHeaders: ['Set-Cookie', 'Content-Length'],
 }));
 
 // Explicitly handle CORS preflight requests
@@ -116,6 +119,8 @@ app.use('/Uploads', express.static(path.join(__dirname, 'Uploads')));
 // Session configuration with debugging
 app.use((req, res, next) => {
     console.log('Incoming request cookies:', req.cookies);
+    console.log('Session ID:', req.sessionID);
+    console.log('Session Data:', req.session);
     next();
 });
 app.use(
@@ -130,11 +135,13 @@ app.use(
             ttl: 24 * 60 * 60, // 24 hours
         }),
         cookie: {
-            secure: process.env.NODE_ENV === 'production', // true on Render (HTTPS)
+            secure: process.env.NODE_ENV === 'production',
             httpOnly: true,
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-origin on production
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 24 * 60 * 60 * 1000,
+            domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined, // For Render subdomains
         },
+        name: 'connect.sid', // Explicitly set cookie name
     })
 );
 
@@ -163,7 +170,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', (req, res, next) => {
-    console.log('Order route hit with URL:', req.originalUrl); // Debug URL
+    console.log('Order route hit with URL:', req.originalUrl);
     winstonLogger.info('Order route hit', { method: req.method, url: req.originalUrl, body: req.body });
     orderRoutes(req, res, next);
 });
