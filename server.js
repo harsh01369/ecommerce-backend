@@ -3,9 +3,7 @@ import cors from 'cors';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import dotenv from 'dotenv';
-import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
 import winston from 'winston';
@@ -152,7 +150,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files for uploaded images
-app.use('/Uploads', express.static(path.join(__dirname, 'Uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Session configuration with debugging
 app.use((req, res, next) => {
@@ -182,21 +180,6 @@ app.use(
         name: 'connect.sid',
     })
 );
-
-// Multer storage configuration for file uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const productFolder = path.join('uploads', req.body.serialNumber || 'default');
-        if (!fs.existsSync(productFolder)) {
-            fs.mkdirSync(productFolder, { recursive: true });
-        }
-        cb(null, productFolder);
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    },
-});
-const upload = multer({ storage });
 
 // Root route
 app.get('/', (req, res) => {
