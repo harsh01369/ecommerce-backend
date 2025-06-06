@@ -186,7 +186,7 @@ app.use(
 // Multer storage configuration for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const productFolder = path.join('Uploads', req.body.serialNumber || 'default');
+        const productFolder = path.join('uploads', req.body.serialNumber || 'default');
         if (!fs.existsSync(productFolder)) {
             fs.mkdirSync(productFolder, { recursive: true });
         }
