@@ -271,12 +271,20 @@ const createOrder = asyncHandler(async (req, res) => {
         quantity: 1,
     });
 
-    const cancelUrl = 'http://localhost:3003/checkout';
+    // Use environment variable for frontend URL
+    const frontendUrl = process.env.REACT_APP_FRONTEND_URL || 'http://localhost:3000';
+    if (!frontendUrl) {
+        logger.error('REACT_APP_FRONTEND_URL is not defined in environment variables');
+        res.status(500);
+        throw new Error('Frontend URL not configured');
+    }
+
+    const cancelUrl = `${frontendUrl}/checkout`;
     let session;
     try {
         new URL(cancelUrl);
     } catch (urlError) {
-        logger.error('Invalid URL format', { cancelUrl, error: urlError.message });
+        logger.error('Invalid URL format for cancelUrl', { cancelUrl, error: urlError.message });
         res.status(400);
         throw new Error(`Invalid URL format: ${urlError.message}`);
     }
@@ -306,11 +314,11 @@ const createOrder = asyncHandler(async (req, res) => {
         throw new Error(`Order creation failed: ${error.message}`);
     }
 
-    const successUrl = `http://localhost:3000/order-confirmation?orderId=${tempOrder._id}`;
+    const successUrl = `${frontendUrl}/order-confirmation?orderId=${tempOrder._id}`;
     try {
         new URL(successUrl);
     } catch (urlError) {
-        logger.error('Invalid URL format', { successUrl, error: urlError.message });
+        logger.error('Invalid URL format for successUrl', { successUrl, error: urlError.message });
         await Order.deleteOne({ _id: tempOrder._id });
         res.status(400);
         throw new Error(`Invalid URL format: ${urlError.message}`);
@@ -386,8 +394,8 @@ const handleStripeWebhook = asyncHandler(async (req, res) => {
         event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
     } catch (err) {
         logger.error('Stripe webhook signature verification failed', { error: err.message });
-        res.status(400);
-        throw new Error(`Webhook Error: ${err.message}`);
+        res.status(400).send(`Webhook Error: ${err.message}`);
+        return;
     }
 
     if (event.type === 'checkout.session.completed') {
@@ -401,6 +409,8 @@ const handleStripeWebhook = asyncHandler(async (req, res) => {
                 logger.info('Order payment confirmed via webhook', { orderId: order._id, stripeSessionId: session.id });
 
                 await sendOrderConfirmationEmail(order);
+            } else {
+                logger.info('Order already marked as paid, skipping update', { orderId: order._id, stripeSessionId: session.id });
             }
         } else {
             logger.warn('Order not found for webhook event', { stripeSessionId: session.id });
