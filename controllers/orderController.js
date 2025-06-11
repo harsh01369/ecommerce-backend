@@ -385,35 +385,42 @@ const handleStripeWebhook = asyncHandler(async (req, res) => {
 
     if (!endpointSecret) {
         logger.error('Stripe webhook secret not defined');
-        res.status(500);
-        throw new Error('Webhook secret not configured');
+        res.status(500).send('Webhook secret not configured');
+        return;
     }
 
     let event;
     try {
         event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+        logger.info('Webhook event received', { eventType: event.type, sessionId: event.data.object.id });
     } catch (err) {
-        logger.error('Stripe webhook signature verification failed', { error: err.message });
+        logger.error('Stripe webhook signature verification failed', { error: err.message, body: req.body, signature: sig });
         res.status(400).send(`Webhook Error: ${err.message}`);
         return;
     }
 
     if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
-        const order = await Order.findOne({ stripeSessionId: session.id }).populate('orderItems.product', 'name price image');
-        if (order) {
-            if (!order.isPaid) {
-                order.isPaid = true;
-                order.paidAt = Date.now();
-                await order.save();
-                logger.info('Order payment confirmed via webhook', { orderId: order._id, stripeSessionId: session.id });
-
-                await sendOrderConfirmationEmail(order);
+        logger.info('Processing checkout.session.completed', { sessionId: session.id });
+        try {
+            const order = await Order.findOne({ stripeSessionId: session.id }).populate('orderItems.product', 'name price image');
+            if (order) {
+                if (!order.isPaid) {
+                    order.isPaid = true;
+                    order.paidAt = Date.now();
+                    await order.save();
+                    logger.info('Order payment confirmed via webhook', { orderId: order._id, stripeSessionId: session.id });
+                    await sendOrderConfirmationEmail(order);
+                } else {
+                    logger.info('Order already marked as paid, skipping update', { orderId: order._id, stripeSessionId: session.id });
+                }
             } else {
-                logger.info('Order already marked as paid, skipping update', { orderId: order._id, stripeSessionId: session.id });
+                logger.warn('Order not found for webhook event', { stripeSessionId: session.id });
             }
-        } else {
-            logger.warn('Order not found for webhook event', { stripeSessionId: session.id });
+        } catch (error) {
+            logger.error('Error processing webhook event', { error: error.message, stack: error.stack, sessionId: session.id });
+            res.status(500).send('Internal server error');
+            return;
         }
     }
 

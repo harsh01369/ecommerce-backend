@@ -142,9 +142,6 @@ app.options('*', cors({
 
 app.use(cookieParser());
 
-// Webhook route (raw body for Stripe)
-app.use('/api/orders/webhook', express.raw({ type: 'application/json' }));
-
 // JSON body parser for other routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
